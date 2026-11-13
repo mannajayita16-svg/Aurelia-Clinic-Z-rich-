@@ -1,0 +1,1393 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Phone,
+  Mail,
+  ArrowRight,
+  ArrowUpRight,
+  CheckCircle2,
+  ShieldCheck,
+  Sparkles,
+  Award,
+  HeartPulse,
+  Stethoscope,
+  Activity,
+  Brain,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  AlertCircle,
+  Info,
+  Printer,
+  Check,
+  Building2,
+  Globe,
+  Lock,
+  UserCheck,
+  Compass,
+  SlidersHorizontal
+} from 'lucide-react';
+
+// ============================================================================
+// TYPES & INTERFACES
+// ============================================================================
+
+type PageId = 'home' | 'about' | 'services' | 'appointment' | 'contact';
+
+interface ServiceItem {
+  id: string;
+  code: string;
+  title: string;
+  shortTitle: string;
+  subtitle: string;
+  duration: string;
+  category: string;
+  description: string;
+  clinicalApproach: string;
+  image: string;
+  fallbackImage: string;
+  inclusions: string[];
+  benefits: string[];
+  recommendedFor: string;
+}
+
+interface TestimonialItem {
+  id: string;
+  quote: string;
+  context: string;
+  patientDescriptor: string;
+  serviceTag: string;
+  year: string;
+}
+
+interface TimelineEvent {
+  period: string;
+  role: string;
+  institution: string;
+  location: string;
+  description: string;
+}
+
+interface AppointmentFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  patientType: 'new' | 'returning';
+  serviceId: string;
+  preferredDate: string;
+  preferredTimeSlot: string;
+  communicationPref: 'phone' | 'email' | 'encrypted_portal';
+  clinicalNotes: string;
+  consentChecked: boolean;
+}
+
+// ============================================================================
+// CURATED HIGH-RELIABILITY PHOTOGRAPHY & EDITORIAL DATA
+// ============================================================================
+
+const SERVICES_DATA: ServiceItem[] = [
+  {
+    id: 'executive-longevity',
+    code: '01',
+    title: 'Executive Preventive & Longevity Medicine',
+    shortTitle: 'Preventive & Longevity',
+    subtitle: 'Comprehensive multi-system baseline mapping and proactive healthspan optimization.',
+    duration: '180 Min Comprehensive Assessment',
+    category: 'Preventive Architecture',
+    description:
+      'Designed for individuals seeking a rigorous, unhurried appraisal of their physiological trajectory. Our flagship longevity assessment synthesizes advanced biomarker profiling, vascular imaging, metabolic testing, and lifestyle architecture into a bespoke long-term clinical roadmap.',
+    clinicalApproach:
+      'Rather than waiting for clinical thresholds of disease to appear, we evaluate subclinical shifts in inflammation, insulin sensitivity, arterial stiffness, and cellular resilience—allowing early, evidence-based intervention.',
+    image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1400&q=85',
+    fallbackImage: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1400&q=85',
+    inclusions: [
+      '90-minute in-depth physician consultation & medical history synthesis',
+      'Advanced lipidology, apolipoprotein profiling & systemic inflammatory markers',
+      'Resting & exertion cardiopulmonary metabolic assessment (VO2 & lactate threshold)',
+      'Body composition & visceral adipose tissue quantification',
+      'Written 12-month personalized longevity & preventive dossier'
+    ],
+    benefits: [
+      'Early identification of silent cardiovascular and metabolic risk factors',
+      'Actionable, non-dogmatic nutrition, supplementation, and exercise prescriptions',
+      'Direct longitudinal tracking with the same principal physician year-over-year'
+    ],
+    recommendedFor: 'Executives, founders, and proactive individuals establishing an annual Swiss baseline.'
+  },
+  {
+    id: 'internal-diagnostics',
+    code: '02',
+    title: 'Comprehensive Internal Medicine & Diagnostics',
+    shortTitle: 'Internal Medicine & Diagnostics',
+    subtitle: 'Precise differential diagnosis and unhurried primary care for complex or everyday concerns.',
+    duration: '60 Min Consultation',
+    category: 'Core Clinical Practice',
+    description:
+      'At the heart of Aurelia Clinic is classical internal medicine practiced with modern diagnostic clarity. Every appointment is scheduled for a full sixty minutes, affording the time required to listen carefully, examine thoroughly, and connect subtle clinical findings.',
+    clinicalApproach:
+      'We bridge rapid point-of-care diagnostics—including high-resolution ultrasound, spirometry, and immediate laboratory panels—with thoughtful clinical reasoning, avoiding fragmented specialist referrals whenever possible.',
+    image: 'https://images.unsplash.com/photo-1666214280557-f1b5022eb634?auto=format&fit=crop&w=1400&q=85',
+    fallbackImage: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=1400&q=85',
+    inclusions: [
+      'Full 60-minute unhurried physical examination and diagnostic dialogue',
+      'Point-of-care high-resolution clinical ultrasound (abdominal, thyroid, vascular)',
+      'Comprehensive hematology, renal, hepatic, and endocrine laboratory panels',
+      'Medication reconciliation and evidence-based deprescribing review',
+      'Same-week follow-up synthesis via encrypted consultation or in-person review'
+    ],
+    benefits: [
+      'Eliminates rushed 12-minute appointments and fragmented clinical communication',
+      'Immediate clarity on acute symptoms or unexplained chronic fatigue',
+      'Seamless coordination with Zürich university hospital subspecialists when indicated'
+    ],
+    recommendedFor: 'Patients seeking a dedicated primary internist or resolution of complex, multi-system symptoms.'
+  },
+  {
+    id: 'cardiovascular-metabolic',
+    code: '03',
+    title: 'Cardiovascular Risk & Metabolic Health',
+    shortTitle: 'Cardiovascular & Metabolic',
+    subtitle: 'Precision cardiometabolic profiling, vascular imaging, and blood pressure optimization.',
+    duration: '90 Min Diagnostic Session',
+    category: 'Subspecialty Focus',
+    description:
+      'Cardiovascular integrity and metabolic flexibility form the foundation of sustained vitality. Our cardiometabolic program looks far beyond standard cholesterol panels to evaluate endothelial function, lipoprotein particle burden, and continuous glycemic dynamics.',
+    clinicalApproach:
+      'We combine non-invasive vascular imaging with individualized medical therapy and structured lifestyle medicine to stabilize plaque risk, optimize blood pressure circadian rhythms, and restore metabolic resilience.',
+    image: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&w=1400&q=85',
+    fallbackImage: 'https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=1400&q=85',
+    inclusions: [
+      '12-lead digital resting ECG & exercise stress electrocardiography',
+      'Carotid intima-media thickness (CIMT) ultrasound & arterial stiffness index',
+      'Apolipoprotein B (ApoB), Lipoprotein(a), homocysteine & hs-CRP analysis',
+      '24-hour ambulatory blood pressure & continuous glucose monitoring (CGM) interpretation',
+      'Tailored lipid-lowering and cardiometabolic risk-reduction protocol'
+    ],
+    benefits: [
+      'Accurate risk stratification for individuals with family history of heart disease',
+      'Nuanced management of pre-diabetes, insulin resistance, and hypertension',
+      'Clear explanation of imaging and lab data without alarmism'
+    ],
+    recommendedFor: 'Individuals with familial cardiovascular history, elevated lipids, or metabolic syndrome.'
+  },
+  {
+    id: 'sleep-stress-physiology',
+    code: '04',
+    title: 'Restorative Sleep & Stress Physiology',
+    shortTitle: 'Sleep & Autonomic Health',
+    subtitle: 'Autonomic nervous system calibration, circadian rhythm alignment, and burnout recovery.',
+    duration: '75 Min Physiological Consult',
+    category: 'Restorative Medicine',
+    description:
+      'Chronic cognitive load, international travel, and persistent sympathetic nervous system activation silently erode sleep architecture, immune competence, and endocrine balance. We evaluate sleep and stress as measurable physiological systems.',
+    clinicalApproach:
+      'Using ambulatory sleep staging, heart rate variability (HRV) autonomic mapping, and diurnal neuroendocrine assessment, we identify the specific physiological bottlenecks preventing deep nocturnal recovery.',
+    image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1400&q=85',
+    fallbackImage: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=85',
+    inclusions: [
+      'Home-based medical-grade sleep architecture & nocturnal oximetry study',
+      '72-hour Heart Rate Variability (HRV) autonomic nervous system balance profile',
+      'Diurnal cortisol curve, thyroid axis, and micronutrient cofactor evaluation',
+      'Circadian light, chronobiology, and jet-lag mitigation protocol',
+      'Non-pharmacological and targeted clinical sleep restoration guidance'
+    ],
+    benefits: [
+      'Restores restorative slow-wave and REM sleep without dependency on sedatives',
+      'Objective measurement of occupational burnout and autonomic recovery',
+      'Sustained daytime cognitive clarity and emotional equilibrium'
+    ],
+    recommendedFor: 'Frequent travelers, high-responsibility professionals, and patients with unrefreshing sleep.'
+  },
+  {
+    id: 'private-concierge-second-opinion',
+    code: '05',
+    title: 'Private Medical Concierge & Second Opinions',
+    shortTitle: 'Concierge & Second Opinions',
+    subtitle: 'Independent clinical synthesis, surgical/treatment review, and global care navigation.',
+    duration: 'Custom Retainer or Case Review',
+    category: 'Bespoke Advisory',
+    description:
+      'When facing a pivotal medical diagnosis, complex treatment decision, or multi-specialist workup, having an independent, senior physician review every piece of evidence provides indispensable peace of mind.',
+    clinicalApproach:
+      'We conduct exhaustive reviews of existing imaging, pathology, and treatment proposals—collaborating directly with leading Swiss and international academic centers to offer an objective, unhurried synthesis.',
+    image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1400&q=85',
+    fallbackImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1400&q=85',
+    inclusions: [
+      'Complete audit and synthesis of prior medical records, MRI/CT imaging, and pathology',
+      'Independent literature review and multidisciplinary case conferencing',
+      '60-minute family or individual consultation (in-clinic or secure telemedicine)',
+      'Written clinical summary outlining conservative vs. interventional options',
+      'Priority referral coordination within Swiss private and university hospitals'
+    ],
+    benefits: [
+      'Unbiased, conflict-free clinical counsel before major procedures or therapies',
+      'Translation of complex subspecialty jargon into clear, structured options',
+      'Seamless continuity for international patients visiting or relocating to Switzerland'
+    ],
+    recommendedFor: 'Patients seeking an independent second opinion or year-round private physician access.'
+  }
+];
+
+const TESTIMONIALS_DATA: TestimonialItem[] = [
+  {
+    id: 't1',
+    quote:
+      'For the first time in twenty years, I experienced a medical consultation where nobody looked at a clock. Dr. Vance synthesized a decade of scattered lab reports into a single, calm, intelligible strategy.',
+    context: 'Annual Executive Longevity & Preventive Assessment',
+    patientDescriptor: 'Senior Partner, Private Equity — Zürich & London (Sample Patient Reflection)',
+    serviceTag: 'Executive Longevity',
+    year: '2024'
+  },
+  {
+    id: 't2',
+    quote:
+      'The atmosphere feels closer to a quiet architectural study than a hospital. Every diagnostic step was explained with scientific rigor and genuine warmth, turning an anxious cardiovascular review into a reassuring experience.',
+    context: 'Cardiometabolic Risk Profiling & Vascular Review',
+    patientDescriptor: 'Architect & University Lecturer — Basel (Sample Patient Reflection)',
+    serviceTag: 'Cardiovascular Health',
+    year: '2024'
+  },
+  {
+    id: 't3',
+    quote:
+      'When our family needed an independent second opinion on a complex endocrine diagnosis, Aurelia Clinic coordinated directly with specialists in Zürich and Geneva within forty-eight hours. Their discretion and thoroughness are unmatched.',
+    context: 'Independent Second Opinion & Care Coordination',
+    patientDescriptor: 'International Family Office Principal — Geneva (Sample Patient Reflection)',
+    serviceTag: 'Medical Concierge',
+    year: '2025'
+  }
+];
+
+const TIMELINE_DATA: TimelineEvent[] = [
+  {
+    period: '2020 — Present',
+    role: 'Founder & Principal Physician (Editable Sample Role)',
+    institution: 'Aurelia Clinic Zürich — Private Medical Practice',
+    location: 'Zürich, Switzerland',
+    description:
+      'Established an independent, low-volume private medical sanctuary dedicated to unhurried internal medicine, preventive cardiology, and evidence-based longevity architecture.'
+  },
+  {
+    period: '2015 — 2020',
+    role: 'Senior Attending Physician, Department of Internal Medicine (Sample Entry)',
+    institution: 'University Hospital Academic Medical Center',
+    location: 'Zürich, Switzerland',
+    description:
+      'Led complex diagnostic outpatient clinics, supervised clinical fellows in internal medicine, and co-directed interdisciplinary preventive cardiometabolic protocols.'
+  },
+  {
+    period: '2012 — 2015',
+    role: 'Clinical & Research Fellow in Preventive Cardiology (Sample Entry)',
+    institution: 'European Center for Vascular & Metabolic Research',
+    location: 'Geneva & Boston',
+    description:
+      'Conducted longitudinal clinical research on subclinical atherosclerosis, endothelial biomarker dynamics, and autonomic nervous system regulation.'
+  },
+  {
+    period: '2007 — 2012',
+    role: 'Doctor of Medicine (MD) & Postgraduate Residency (Sample Entry)',
+    institution: 'Faculty of Medicine, Swiss Federal & University Training Network',
+    location: 'Basel & Zürich, Switzerland',
+    description:
+      'Completed foundational medical doctorate and board certification training in General Internal Medicine (FMH equivalent sample credential).'
+  }
+];
+
+const CLINIC_GALLERY = [
+  {
+    title: 'The Arrival Salon & Library',
+    caption: 'Designed for acoustic serenity and complete patient privacy, replacing traditional waiting rooms with private preparation suites.',
+    image: 'https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=1200&q=85',
+    tag: 'Sanctuary Architecture'
+  },
+  {
+    title: 'Principal Consultation Study',
+    caption: 'Natural oak, warm limestone, and abundant daylight foster unhurried dialogue between physician and patient.',
+    image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=85',
+    tag: 'Clinical Dialogue'
+  },
+  {
+    title: 'Integrated Diagnostic Suite',
+    caption: 'Equipped with point-of-care high-resolution ultrasound, cardiopulmonary exercise testing, and vascular imaging.',
+    image: 'https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?auto=format&fit=crop&w=1200&q=85',
+    tag: 'Precision Technology'
+  }
+];
+
+// ============================================================================
+// REUSABLE UTILITY COMPONENTS
+// ============================================================================
+
+/**
+ * SafeImage: Guarantees zero broken images by providing smooth reveal + automatic fallback
+ */
+const SafeImage: React.FC<{
+  src: string;
+  fallback?: string;
+  alt: string;
+  className?: string;
+  containerClassName?: string;
+}> = ({
+  src,
+  fallback = 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80',
+  alt,
+  className = '',
+  containerClassName = ''
+}) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setImgSrc(src);
+  }, [src]);
+
+  return (
+    <div className={`relative overflow-hidden bg-[#ECE9E2] ${containerClassName}`}>
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-[#ECE9E2] via-[#F4F2EC] to-[#E3DFD5]" />
+      )}
+      <img
+        src={imgSrc}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          if (imgSrc !== fallback) {
+            setImgSrc(fallback);
+          }
+          setLoaded(true);
+        }}
+        className={`transition-all duration-700 ease-out ${
+          loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.02]'
+        } ${className}`}
+      />
+    </div>
+  );
+};
+
+/**
+ * AnimatedCounter: Smooth scroll-triggered count-up for clinical statistics
+ */
+const AnimatedCounter: React.FC<{
+  target: number;
+  suffix?: string;
+  prefix?: string;
+  duration?: number;
+}> = ({ target, suffix = '', prefix = '', duration = 1800 }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  useEffect(() => {
+    if (!isInView) return;
+    let startTime: number | null = null;
+    let animationFrame: number;
+
+    const updateCounter = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * target));
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(updateCounter);
+      } else {
+        setCount(target);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(updateCounter);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [isInView, target, duration]);
+
+  return (
+    <span ref={ref} className="tabular-nums">
+      {prefix}
+      {count.toLocaleString()}
+      {suffix}
+    </span>
+  );
+};
+
+/**
+ * EditableSampleBadge: Subtle indicator showing where clinics can customize sample credentials/metrics
+ */
+const EditableSampleBadge: React.FC<{
+  show: boolean;
+  label?: string;
+  className?: string;
+}> = ({ show, label = 'Editable Sample Credential', className = '' }) => {
+  if (!show) return null;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide uppercase bg-[#A8B9A5]/25 text-[#142D3A] border border-[#A8B9A5]/50 ${className}`}
+    >
+      <SlidersHorizontal className="w-3 h-3 text-[#486349]" />
+      {label}
+    </span>
+  );
+};
+
+// ============================================================================
+// MAIN APPLICATION COMPONENT
+// ============================================================================
+
+export function App() {
+  const [currentPage, setCurrentPage] = useState<PageId>('home');
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('executive-longevity');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showTemplateGuides, setShowTemplateGuides] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Testimonial carousel state
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  // Quick Home Booking Bar state
+  const [quickService, setQuickService] = useState('executive-longevity');
+  const [quickDate, setQuickDate] = useState('2025-05-15');
+
+  // Handle scroll styling for navbar & SEO title updates
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 24);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const pageTitles: Record<PageId, string> = {
+      home: 'Aurelia Clinic Zürich | Private Internal Medicine & Longevity Sanctuary',
+      about: 'Dr. Julian Vance, MD & Clinical Ethos | Aurelia Clinic Zürich',
+      services: 'Medical Specialties & Diagnostic Programs | Aurelia Clinic Zürich',
+      appointment: 'Request a Private Consultation | Aurelia Clinic Zürich',
+      contact: 'Location, Hours & Concierge Contact | Aurelia Clinic Zürich'
+    };
+    document.title = pageTitles[currentPage];
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setMobileMenuOpen(false);
+  }, [currentPage]);
+
+  // Navigation helper that optionally pre-selects a medical service
+  const navigateTo = (page: PageId, preselectServiceId?: string) => {
+    if (preselectServiceId) {
+      setSelectedServiceId(preselectServiceId);
+    }
+    setCurrentPage(page);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8F7F2] text-[#142D3A] font-sans selection:bg-[#142D3A] selection:text-[#F8F7F2] antialiased overflow-x-hidden">
+      {/* Inject Google Fonts for Authentic Luxury Editorial Typography */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        
+        .font-serif-luxury {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+        }
+        .font-sans-clean {
+          font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        html {
+          scroll-behavior: smooth;
+        }
+      `}</style>
+
+      {/* Top Swiss Editorial Utility Bar */}
+      <div className="bg-[#142D3A] text-[#F8F7F2]/90 text-xs border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <span className="inline-flex items-center gap-1.5 text-[#A8B9A5]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#A8B9A5] animate-pulse" />
+              Zürich Lakefront Medical Sanctuary
+            </span>
+            <span className="hidden md:inline-flex items-center gap-1.5 text-[#F8F7F2]/75">
+              <MapPin className="w-3.5 h-3.5 text-[#A8B9A5]" />
+              Bahnhofstrasse 84, 8001 Zürich (Sample Address)
+            </span>
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-[#F8F7F2]/75">
+              <Clock className="w-3.5 h-3.5 text-[#A8B9A5]" />
+              Mon – Fri: 08:00 – 18:30 CET
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 ml-auto">
+            <button
+              onClick={() => setShowTemplateGuides(!showTemplateGuides)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/15 text-[11px] text-[#F8F7F2] transition-colors cursor-pointer"
+              title="Toggle visibility of editable sample credential badges"
+            >
+              <SlidersHorizontal className="w-3 h-3 text-[#A8B9A5]" />
+              <span>{showTemplateGuides ? 'Sample Guides: Visible' : 'Sample Guides: Hidden'}</span>
+            </button>
+            <a
+              href="tel:+41445002910"
+              className="hidden sm:inline-flex items-center gap-1.5 hover:text-[#A8B9A5] transition-colors font-medium"
+            >
+              <Phone className="w-3.5 h-3.5 text-[#A8B9A5]" />
+              +41 44 500 29 10
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Luxury Navigation Header */}
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-[#F8F7F2]/95 backdrop-blur-md shadow-[0_8px_30px_rgb(20,45,58,0.06)] border-b border-[#E5E2DC]'
+            : 'bg-[#F8F7F2] border-b border-[#E5E2DC]/70'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between">
+          {/* Brand Crest & Logo */}
+          <button
+            onClick={() => navigateTo('home')}
+            className="flex items-center gap-3.5 text-left group focus:outline-none cursor-pointer"
+          >
+            <div className="w-11 h-11 rounded-full bg-[#142D3A] text-[#F8F7F2] flex items-center justify-center border border-[#142D3A] group-hover:bg-[#1E3F50] transition-colors relative">
+              <span className="font-serif-luxury text-2xl tracking-wider font-medium">A</span>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#A8B9A5] border-2 border-[#F8F7F2]" />
+            </div>
+            <div>
+              <span className="block font-serif-luxury text-xl sm:text-2xl tracking-[0.12em] uppercase text-[#142D3A] font-semibold leading-none">
+                Aurelia Clinic
+              </span>
+              <span className="block text-[10px] sm:text-[11px] tracking-[0.22em] uppercase text-[#142D3A]/65 mt-1 font-medium">
+                Zürich • Private Medicine
+              </span>
+            </div>
+          </button>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-2" aria-label="Primary Navigation">
+            {[
+              { id: 'home', label: 'Home' },
+              { id: 'about', label: 'The Physician & Clinic' },
+              { id: 'services', label: 'Medical Specialties' },
+              { id: 'appointment', label: 'Appointments' },
+              { id: 'contact', label: 'Location & Contact' }
+            ].map((item) => {
+              const isActive = currentPage === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigateTo(item.id as PageId)}
+                  className={`relative px-4 py-2.5 text-sm font-medium transition-colors rounded-full cursor-pointer ${
+                    isActive
+                      ? 'text-[#142D3A] font-semibold'
+                      : 'text-[#142D3A]/70 hover:text-[#142D3A]'
+                  }`}
+                >
+                  {item.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeNavIndicator"
+                      className="absolute bottom-1 left-4 right-4 h-[2px] bg-[#142D3A] rounded-full"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Right CTA Action */}
+          <div className="hidden sm:flex items-center gap-3">
+            <button
+              onClick={() => navigateTo('appointment')}
+              className="group relative inline-flex items-center gap-2.5 bg-[#142D3A] text-[#F8F7F2] px-6 py-3 rounded-full text-sm font-medium tracking-wide hover:bg-[#1D3E4F] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer"
+            >
+              <Calendar className="w-4 h-4 text-[#A8B9A5]" />
+              <span>Book an Appointment</span>
+              <ArrowUpRight className="w-4 h-4 text-[#A8B9A5] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </button>
+          </div>
+
+          {/* Mobile Drawer Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle Menu"
+            className="lg:hidden p-2.5 rounded-full border border-[#E5E2DC] text-[#142D3A] hover:bg-[#142D3A]/5 transition-colors"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              className="lg:hidden bg-[#F8F7F2] border-b border-[#E5E2DC] overflow-hidden"
+            >
+              <div className="px-4 pt-3 pb-6 space-y-2">
+                {[
+                  { id: 'home', label: 'Home' },
+                  { id: 'about', label: 'The Physician & Clinic' },
+                  { id: 'services', label: 'Medical Specialties' },
+                  { id: 'appointment', label: 'Book an Appointment' },
+                  { id: 'contact', label: 'Location & Contact' }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => navigateTo(item.id as PageId)}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left text-base font-medium transition-colors ${
+                      currentPage === item.id
+                        ? 'bg-[#142D3A] text-[#F8F7F2]'
+                        : 'text-[#142D3A] hover:bg-[#142D3A]/5'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <ArrowRight className="w-4 h-4 opacity-70" />
+                  </button>
+                ))}
+
+                <div className="pt-4 mt-4 border-t border-[#E5E2DC] flex flex-col gap-2 text-xs text-[#142D3A]/70 px-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-[#486349]" />
+                    <span>Bahnhofstrasse 84, 8001 Zürich</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-[#486349]" />
+                    <span>Concierge Line: +41 44 500 29 10</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* Main Dynamic Page View Container */}
+      <main id="main-content" className="min-h-[75vh]">
+        <AnimatePresence mode="wait">
+          {currentPage === 'home' && (
+            <motion.div
+              key="home-page"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
+              <HomePage
+                navigateTo={navigateTo}
+                showTemplateGuides={showTemplateGuides}
+                activeTestimonial={activeTestimonial}
+                setActiveTestimonial={setActiveTestimonial}
+                quickService={quickService}
+                setQuickService={setQuickService}
+                quickDate={quickDate}
+                setQuickDate={setQuickDate}
+              />
+            </motion.div>
+          )}
+
+          {currentPage === 'about' && (
+            <motion.div
+              key="about-page"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
+              <AboutPage navigateTo={navigateTo} showTemplateGuides={showTemplateGuides} />
+            </motion.div>
+          )}
+
+          {currentPage === 'services' && (
+            <motion.div
+              key="services-page"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
+              <ServicesPage navigateTo={navigateTo} showTemplateGuides={showTemplateGuides} />
+            </motion.div>
+          )}
+
+          {currentPage === 'appointment' && (
+            <motion.div
+              key="appointment-page"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
+              <AppointmentPage
+                initialServiceId={selectedServiceId}
+                initialDate={quickDate}
+                navigateTo={navigateTo}
+              />
+            </motion.div>
+          )}
+
+          {currentPage === 'contact' && (
+            <motion.div
+              key="contact-page"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
+              <ContactPage navigateTo={navigateTo} showTemplateGuides={showTemplateGuides} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+
+      {/* Luxury Swiss Clinical Footer */}
+      <footer className="bg-[#142D3A] text-[#F8F7F2] border-t border-white/10">
+        {/* Emergency Medical Banner */}
+        <div className="bg-[#0F222D] border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#F8F7F2]/80">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 text-[#A8B9A5] shrink-0" />
+              <span>
+                <strong className="text-white font-semibold">Medical Emergency Notice:</strong> Aurelia Clinic is an appointment-only private outpatient practice. For acute or life-threatening emergencies, dial{' '}
+                <strong className="text-white underline">144 / 112</strong> (Europe) or{' '}
+                <strong className="text-white underline">911</strong> immediately.
+              </span>
+            </div>
+            <button
+              onClick={() => navigateTo('contact')}
+              className="text-[#A8B9A5] hover:underline shrink-0 font-medium cursor-pointer"
+            >
+              View Urgent Care Protocol →
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 pb-16 border-b border-white/10">
+            {/* Brand Column */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-full bg-[#F8F7F2] text-[#142D3A] flex items-center justify-center">
+                  <span className="font-serif-luxury text-xl font-bold">A</span>
+                </div>
+                <div>
+                  <span className="block font-serif-luxury text-2xl tracking-[0.12em] uppercase text-white">
+                    Aurelia Clinic
+                  </span>
+                  <span className="block text-[10px] tracking-[0.22em] uppercase text-[#A8B9A5]">
+                    Zürich • Private Medical Practice
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-[#F8F7F2]/75 leading-relaxed max-w-sm">
+                Combining the unhurried attentiveness of traditional family medicine with contemporary Swiss diagnostic precision and preventive longevity science.
+              </p>
+              <div className="flex items-center gap-3 text-xs text-[#A8B9A5]">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Strict Swiss Medical Confidentiality & Discreet Arrival</span>
+              </div>
+            </div>
+
+            {/* Navigation Column */}
+            <div className="lg:col-span-2 space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A8B9A5]">
+                Practice Navigation
+              </h3>
+              <ul className="space-y-2.5 text-sm text-[#F8F7F2]/80">
+                {[
+                  { id: 'home', label: 'Home Overview' },
+                  { id: 'about', label: 'Dr. Julian Vance, MD' },
+                  { id: 'services', label: 'Medical Specialties' },
+                  { id: 'appointment', label: 'Request Appointment' },
+                  { id: 'contact', label: 'Location & Hours' }
+                ].map((link) => (
+                  <li key={link.id}>
+                    <button
+                      onClick={() => navigateTo(link.id as PageId)}
+                      className="hover:text-white transition-colors cursor-pointer"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Specialties Column */}
+            <div className="lg:col-span-3 space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A8B9A5]">
+                Clinical Programs
+              </h3>
+              <ul className="space-y-2.5 text-sm text-[#F8F7F2]/80">
+                {SERVICES_DATA.map((service) => (
+                  <li key={service.id}>
+                    <button
+                      onClick={() => navigateTo('services', service.id)}
+                      className="hover:text-white transition-colors text-left cursor-pointer"
+                    >
+                      {service.shortTitle}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Sanctuary Contact Column */}
+            <div className="lg:col-span-3 space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A8B9A5]">
+                Private Concierge Desk
+              </h3>
+              <div className="space-y-3 text-sm text-[#F8F7F2]/80">
+                <p className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-[#A8B9A5] shrink-0 mt-1" />
+                  <span>
+                    Bahnhofstrasse 84, 4th Floor
+                    <br />
+                    8001 Zürich, Switzerland
+                  </span>
+                </p>
+                <p className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-[#A8B9A5] shrink-0" />
+                  <span>+41 44 500 29 10</span>
+                </p>
+                <p className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-[#A8B9A5] shrink-0" />
+                  <span>concierge@aureliaclinic.ch</span>
+                </p>
+              </div>
+              <div className="pt-2">
+                <button
+                  onClick={() => navigateTo('appointment')}
+                  className="w-full py-2.5 px-4 rounded-full bg-[#A8B9A5] text-[#142D3A] font-semibold text-xs uppercase tracking-wider hover:bg-white transition-colors cursor-pointer"
+                >
+                  Schedule Private Consultation
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Legal & Sample Disclaimer */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#F8F7F2]/60">
+            <p>© {new Date().getFullYear()} Aurelia Clinic Zürich. All rights reserved.</p>
+            <p className="text-center sm:text-right max-w-xl">
+              Template Transparency Note: Physician biography, consultation metrics, and patient reflections displayed are customizable sample structures for institutional personalization.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// ============================================================================
+// 1. HOME PAGE COMPONENT
+// ============================================================================
+
+const HomePage: React.FC<{
+  navigateTo: (page: PageId, serviceId?: string) => void;
+  showTemplateGuides: boolean;
+  activeTestimonial: number;
+  setActiveTestimonial: React.Dispatch<React.SetStateAction<number>>;
+  quickService: string;
+  setQuickService: React.Dispatch<React.SetStateAction<string>>;
+  quickDate: string;
+  setQuickDate: React.Dispatch<React.SetStateAction<string>>;
+}> = ({
+  navigateTo,
+  showTemplateGuides,
+  activeTestimonial,
+  setActiveTestimonial,
+  quickService,
+  setQuickService,
+  quickDate,
+  setQuickDate
+}) => {
+  return (
+    <div>
+      {/* =====================================================================
+          HERO SECTION (Full-Screen Editorial Layout)
+      ====================================================================== */}
+      <section className="relative pt-8 pb-20 lg:pt-14 lg:pb-28 border-b border-[#E5E2DC] overflow-hidden">
+        {/* Subtle Architectural Grid Lines */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-35"
+          style={{
+            backgroundImage:
+              'radial-gradient(#142D3A 0.5px, transparent 0.5px)',
+            backgroundSize: '32px 32px'
+          }}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+            {/* Left Editorial Column (7 cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              className="lg:col-span-7 space-y-8"
+            >
+              <div className="inline-flex flex-wrap items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white border border-[#E5E2DC] shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-[#486349]" />
+                <span className="text-xs font-medium tracking-wider uppercase text-[#142D3A]">
+                  Swiss Private Internal & Longevity Medicine
+                </span>
+              </div>
+
+              <h1 className="font-serif-luxury text-5xl sm:text-6xl lg:text-[72px] text-[#142D3A] font-normal leading-[1.06] tracking-tight">
+                Exceptional Care.{' '}
+                <span className="italic font-normal text-[#355646] block sm:inline">
+                  A Healthier Tomorrow.
+                </span>
+              </h1>
+
+              <p className="text-base sm:text-lg text-[#142D3A]/80 leading-relaxed max-w-2xl font-normal">
+                An unhurried medical sanctuary in the heart of Zürich. We unite sixty-minute physician consultations, comprehensive preventive diagnostics, and evidence-based longevity medicine for patients who value clinical depth and complete discretion.
+              </p>
+
+              {/* Primary Hero CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
+                <button
+                  onClick={() => navigateTo('appointment')}
+                  className="group inline-flex items-center justify-center gap-3 bg-[#142D3A] text-[#F8F7F2] px-8 py-4 rounded-full text-sm font-medium tracking-wide hover:bg-[#1D3E4F] transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
+                >
+                  <span>Book an Appointment</span>
+                  <ArrowRight className="w-4 h-4 text-[#A8B9A5] transition-transform duration-300 group-hover:translate-x-1" />
+                </button>
+
+                <button
+                  onClick={() => navigateTo('services')}
+                  className="inline-flex items-center justify-center gap-2.5 bg-white text-[#142D3A] border border-[#142D3A]/20 hover:border-[#142D3A] px-8 py-4 rounded-full text-sm font-medium tracking-wide transition-all duration-300 cursor-pointer"
+                >
+                  <span>Explore Our Services</span>
+                </button>
+              </div>
+
+              {/* Trust Highlights Row */}
+              <div className="pt-6 border-t border-[#E5E2DC] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-[#142D3A]/75">
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-[#486349] shrink-0" />
+                  <span>Minimum 60-Minute Consultations</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-[#486349] shrink-0" />
+                  <span>Direct Principal Physician Access</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Globe className="w-4 h-4 text-[#486349] shrink-0" />
+                  <span>EN • DE • FR • IT Consultations</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right Hero Portrait & Floating Clinical Card (5 cols) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
+              className="lg:col-span-5 relative"
+            >
+              <div className="relative mx-auto max-w-md lg:max-w-none">
+                {/* Main Rounded Architectural Frame */}
+                <div className="rounded-[28px] overflow-hidden border border-[#E5E2DC] shadow-[0_24px_60px_rgba(20,45,58,0.12)] bg-white p-2.5">
+                  <SafeImage
+                    src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=1200&q=85"
+                    alt="Dr. Julian Vance, MD — Principal Physician at Aurelia Clinic Zürich"
+                    containerClassName="rounded-[20px] aspect-[4/5]"
+                    className="w-full h-full object-cover object-top"
+                  />
+                </div>
+
+                {/* Floating Credential Card (Bottom Left) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                  className="mt-4 sm:mt-0 sm:absolute sm:-bottom-6 sm:-left-6 bg-white/95 backdrop-blur-md p-5 rounded-2xl border border-[#E5E2DC] shadow-xl max-w-xs"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div>
+                      <p className="font-serif-luxury text-xl font-semibold text-[#142D3A]">
+                        Dr. Julian Vance, MD
+                      </p>
+                      <p className="text-xs text-[#142D3A]/70">
+                        Principal Internist & Longevity Physician
+                      </p>
+                    </div>
+                    <span className="w-8 h-8 rounded-full bg-[#A8B9A5]/25 flex items-center justify-center text-[#142D3A] shrink-0">
+                      <Stethoscope className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <EditableSampleBadge
+                    show={showTemplateGuides}
+                    label="Editable Physician Profile"
+                    className="mt-1"
+                  />
+                </motion.div>
+
+                {/* Floating Swiss Sanctuary Pill (Top Right) */}
+                <motion.div
+                  initial={{ opacity: 0, y: -15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.65, duration: 0.6 }}
+                  className="hidden sm:flex absolute top-6 -right-4 bg-[#142D3A] text-[#F8F7F2] px-4 py-2.5 rounded-full items-center gap-2.5 shadow-lg border border-white/15 text-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#A8B9A5]" />
+                  <span>By Private Appointment Only</span>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          ANIMATED CLINICAL STATISTICS SECTION
+      ====================================================================== */}
+      <section className="py-16 lg:py-20 bg-white border-b border-[#E5E2DC]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-[#E5E2DC]">
+            <div>
+              <span className="text-xs uppercase tracking-[0.2em] text-[#486349] font-semibold">
+                Clinical Benchmarks & Practice Standards
+              </span>
+              <h2 className="font-serif-luxury text-2xl sm:text-3xl text-[#142D3A] mt-1">
+                Measured by Depth of Attention, Never Volume
+              </h2>
+            </div>
+            <EditableSampleBadge
+              show={showTemplateGuides}
+              label="Customizable Clinic Benchmarks"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                number: 18,
+                suffix: '+ Years',
+                label: 'Clinical & Academic Practice',
+                detail: 'Internal medicine, vascular prevention, and executive health leadership (Sample Metric).'
+              },
+              {
+                number: 4200,
+                suffix: '+',
+                label: 'Comprehensive Consultations',
+                detail: 'Individualized diagnostic evaluations conducted with zero rushed scheduling (Sample Metric).'
+              },
+              {
+                number: 5,
+                suffix: ' Core Pillars',
+                label: 'Integrated Medical Specialties',
+                detail: 'Longevity, Internal Diagnostics, Cardiometabolic, Sleep Physiology & Second Opinions.'
+              },
+              {
+                number: 60,
+                suffix: ' Min',
+                label: 'Standard Consultation Standard',
+                detail: 'Every standard appointment is reserved for a minimum of one full hour with the physician.'
+              }
+            ].map((stat, idx) => (
+              <div
+                key={idx}
+                className="p-6 rounded-2xl bg-[#F8F7F2] border border-[#E5E2DC] flex flex-col justify-between"
+              >
+                <div>
+                  <div className="font-serif-luxury text-4xl sm:text-5xl text-[#142D3A] font-semibold tracking-tight">
+                    <AnimatedCounter target={stat.number} suffix={stat.suffix} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-[#142D3A] mt-3">
+                    {stat.label}
+                  </h3>
+                </div>
+                <p className="text-xs text-[#142D3A]/70 leading-relaxed mt-3 pt-3 border-t border-[#E5E2DC]">
+                  {stat.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          INTRODUCTION TO THE PRINCIPAL PHYSICIAN
+      ====================================================================== */}
+      <section className="py-20 lg:py-28 border-b border-[#E5E2DC]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            {/* Portrait Column */}
+            <div className="lg:col-span-5">
+              <div className="relative">
+                <SafeImage
+                  src="https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=1000&q=85"
+                  alt="Dr. Julian Vance reviewing diagnostic charts"
+                  containerClassName="rounded-[24px] aspect-[4/5] border border-[#E5E2DC] shadow-lg"
+                  className="w-full h-full object-cover"
+                />
+                <div className="mt-4 flex items-center justify-between text-xs text-[#142D3A]/65 px-1">
+                  <span>Consultation Study — Zürich</span>
+                  <EditableSampleBadge show={showTemplateGuides} label="Sample Biography Block" />
+                </div>
+              </div>
+            </div>
+
+            {/* Editorial Narrative Column */}
+            <div className="lg:col-span-7 space-y-6">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#486349]">
+                Principal Physician Introduction
+              </span>
+
+              <h2 className="font-serif-luxury text-4xl sm:text-5xl text-[#142D3A] leading-[1.15]">
+                “True diagnostic clarity requires the luxury of unhurried listening.”
+              </h2>
+
+              <p className="text-base sm:text-lg text-[#142D3A]/80 leading-relaxed">
+                Modern healthcare frequently fragments the patient into isolated organs and rushed fifteen-minute intervals. At Aurelia Clinic Zürich, Dr. Julian Vance practices medicine the way it was intended: as a continuous, intellectually rigorous partnership between physician and patient.
+              </p>
+
+              <p className="text-sm sm:text-base text-[#142D3A]/75 leading-relaxed">
+                By intentionally limiting annual practice membership and daily appointment volume, Dr. Vance personally oversees every diagnostic workup, preventive longevity blueprint, and subspecialist coordination—ensuring nothing is overlooked or delegated to automated protocols.
+              </p>
+
+              {/* Credentials Highlight Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                <div className="p-4 rounded-xl bg-white border border-[#E5E2DC]">
+                  <p className="text-xs uppercase tracking-wider text-[#486349] font-semibold">
+                    Board Specialization
+                  </p>
+                  <p className="text-sm font-medium text-[#142D3A] mt-1">
+                    General Internal Medicine & Preventive Cardiology (Sample Credential)
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-white border border-[#E5E2DC]">
+                  <p className="text-xs uppercase tracking-wider text-[#486349] font-semibold">
+                    Clinical Languages
+                  </p>
+                  <p className="text-sm font-medium text-[#142D3A] mt-1">
+                    English, German, French & Italian
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 flex flex-wrap items-center gap-6">
+                <button
+                  onClick={() => navigateTo('about')}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#142D3A] hover:text-[#486349] transition-colors group cursor-pointer"
+                >
+                  <span>Read Full Biography & Medical Philosophy</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          MEDICAL SERVICES EDITORIAL SHOWCASE
+      ====================================================================== */}
+      <section className="py-20 lg:py-28 bg-white border-b border-[#E5E2DC]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#486349]">
+                Clinical Specialties & Programs
+              </span>
+              <h2 className="font-serif-luxury text-4xl sm:text-5xl text-[#142D3A] mt-2 leading-tight">
+                Bespoke Medical Architecture for Every Stage of Health
+              </h2>
+            </div>
+            <button
+              onClick={() => navigateTo('services')}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-[#142D3A]/20 hover:border-[#142D3A] text-xs font-semibold uppercase tracking-wider text-[#142D3A] transition-colors self-start md:self-auto cursor-pointer"
+            >
+              <span>View Detailed Clinical Dossiers</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Editorial Service Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {SERVICES_DATA.map((service, index) => (
+              <motion.div
+                key={service.id}
+                whileHover={{ y: -6 }}
+                transition={{ duration: 0.3 }}
+                className={`group rounded-[24px] bg-[#F8F7F2] border border-[#E5E2DC] overflow-hidden flex flex-col justify-between transition-shadow hover:shadow-[0_20px_50px_rgba(20,45,58,0.08)] ${
+                  index === 0 ? 'md:col-span-2 lg:col-span-2' : ''
+                }`}
+              >
+                <div>
+                  <div className="relative overflow-hidden aspect-[16/10]">
+                    <SafeImage
+                      src={service.image}
+                      fallback={service.fallbackImage}
+                      alt={service.title}
+                      containerClassName="w-full h-full"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute top-4 left-4 flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full bg-[#142D3A]/90 backdrop-blur-xs text-[#F8F7F2] text-xs font-medium">
+                        {service.code} • {service.category}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-4 right-4">
+                      <span className="px-3 py-1 rounded-full bg-white/95 backdrop-blur-xs text-[#142D3A] text-xs font-medium shadow-xs">
+                        {service.duration}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-6 sm:p-8">
+                    <h3 className="font-serif-luxury text-2xl sm:text-3xl text-[#142D3A] group-hover:text-[#355646] transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm text-[#142D3A]/75 mt-2.5 leading-relaxed">
+                      {service.description}
+                    </p>
+
+                    <div className="mt-5 pt-5 border-t border-[#E5E2DC] space-y-2">
+                      {service.inclusions.slice(0, 2).map((inc, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs text-[#142D3A]/80">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#486349] shrink-0 mt-0.5" />
+                          <span>{inc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 sm:px-8 pb-6 pt-2 flex items-center justify-between gap-4">
+                  <button
+                    onClick={() => navigateTo('services', service.id)}
+                    className="text-xs font-semibold uppercase tracking-wider text-[#142D3A]/75 hover:text-[#142D3A] transition-colors cursor-pointer"
+                  >
+                    Explore Protocol →
+                  </button>
+                  <button
+                    onClick={() => navigateTo('appointment', service.id)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#142D3A] text-[#F8F7F2] text-xs font-medium hover:bg-[#1E3F50] transition-colors cursor-pointer"
+                  >
+                    <span>Book Service</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-[#A8B9A5]" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          WHY CHOOSE US — SWISS PRECISION PILLARS
+      ====================================================================== */}
+      <section className="py-20 lg:py-28 bg-[#142D3A] text-[#F8F7F2]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mb-16">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A8B9A5]">
+              The Aurelia Distinction
+            </span>
+            <h2 className="font-serif-luxury text-4xl sm:text-5xl text-white mt-3 leading-tight">
+              Why Discerning Patients Entrust Their Health to Our Sanctuary
+            </h2>
+            <p className="text-base text-[#F8F7F2]/75 mt-4 leading-relaxed">
+              We have redesigned every touchpoint of the private medical experience to eliminate clinical anxiety, waiting rooms, and fragmented communication.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                icon: Clock,
+                title: 'Unhurried 60-Minute Consultations',
+                description:
+                  'Every consultation is scheduled for at least one full hour, allowing nuanced diagnostic questioning and clear explanation of findings.'
+              },
+              {
+                icon: Activity,
+                title: 'Integrated Point-of-Care Diagnostics',
+                description:
+                  'High-resolution ultrasound, cardiopulmonary exercise testing, and vascular profiling are performed seamlessly within a single visit.'
+              },
+              {
+                icon: Lock,
+                title: 'Absolute Privacy & Discretion',
+                description:
+                  'Private suite arrival with zero shared waiting areas, strict Swiss medical confidentiality, and encrypted clinical dossiers.'
+              },
+              {
+                icon: Compass,
+                title: 'Independent Clinical Advocacy',
+                description:
+                  'Free from hospital quotas or pharmaceutical affiliations, our recommendations are guided strictly by peer-reviewed evidence.'
+              }
+            ].map((pillar, i) => {
+              const IconComponent = pillar.icon;
+              return (
+                <div
+                  key={i}
+                  className="p-7 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[#A8B9A5]/50 transition-colors flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-[#A8B9A5]/15 text-[#A8B9A5] flex items-center justify-center mb-6">
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-serif-luxury text-2xl text-white font-medium">
+                      {pillar.title}
+                    </h3>
+                    <p className="text-sm text-[#F8F7F2]/75 mt-3 leading-relaxed">
+                      {pillar.description}
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-white/10 text-[11px] uppercase tracking-widest text-[#A8B9A5]">
+                    Pillar 0{i + 1}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          PATIENT REFLECTIONS / TESTIMONIALS CAROUSEL
+      ====================================================================== */}
+      <section className="py-20 lg:py-28 bg-[#F8F7F2] border-b border-[#E5E2DC]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#486349]">
+                Patient Reflections
+              </span>
+              <h2 className="font-serif-luxury text-3xl sm:text-4xl text-[#142D3A] mt-1">
+                Experiences of Calm & Clinical Clarity
+              </h2>
+            </div>
+            <EditableSampleBadge
+              show={showTemplateGuides}
+              label="Sample Anonymized Reflections"
+            />
+          </div>
+
+          <div className="relative bg-white rounded-[28px] border border-[#E5E2DC] p-8 sm:p-12 lg:p-16 shadow-xs">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={TESTIMONIALS_DATA[activeTestimonial].id}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.35 }}
+                className="space-y-8"
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F8F7F2] border border-[#E5E2DC] text-xs font-medium text-[#486349]">
+                  <span>{TESTIMONIALS_DATA[activeTestimonial].serviceTag}</span>
+                </div>
+
+                <blockquote className="font-serif-luxury text-2xl sm:text-3xl lg:text-4xl text-[#142D3A] leading-[1.3] font-normal">
+                  “{TESTIMONIALS_DATA[activeTestimonial]
